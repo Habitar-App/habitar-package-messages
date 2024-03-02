@@ -1,6 +1,6 @@
 {
   "name": "@butfly/messages",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "main": "lib/index.ts",
   "files": [
     "lib"
@@ -18,7 +18,7 @@
     "@types/amqplib": "^0.10.5",
     "@types/winston": "^2.4.4",
     "amqplib": "^0.10.3",
-    "typescript": "^5.3.3",
+    "typescript": "^5.0.0",
     "winston": "^3.11.0"
   }
 }
