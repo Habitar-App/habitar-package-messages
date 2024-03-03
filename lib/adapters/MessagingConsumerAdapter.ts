@@ -15,18 +15,21 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
   private messagingPublisher: IMessagingPublisherAdapter
   private logger: Logger
   private amqpConnection: (data: { exchange: string, queues: string[] }) => Promise<{ channel: Channel, connection: Connection }>
+  private config?: Partial<{ requeue: boolean }>
 
-  constructor({ useCase, messagingPublisher, logger, amqpConnection }: {
+  constructor({ useCase, messagingPublisher, logger, amqpConnection, config = {} }: {
     useCase: { execute: (data: any) => Promise<any> | any },
     messagingPublisher: IMessagingPublisherAdapter,
     logger: Logger,
-    amqpConnection: (data: { exchange: string, queues: string[] }) => Promise<{ channel: Channel, connection: Connection }>
+    amqpConnection: (data: { exchange: string, queues: string[] }) => Promise<{ channel: Channel, connection: Connection }>,
+    config?: Partial<{ requeue: boolean }>
   }, options: RabbitConsumerAdapterOptions) {
     this.useCase = useCase
     this.options = options
     this.messagingPublisher = messagingPublisher
     this.logger = logger
     this.amqpConnection = amqpConnection
+    this.config = { ...config, requeue: config?.requeue || false }
 
     this.consume()
   }
@@ -56,7 +59,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
         }
         this.logger.info(`${successMessage}`, queueMessage)
       } catch (error: any) {
-        channel.nack(message as ConsumeMessage, undefined, false)
+        channel.nack(message as ConsumeMessage, undefined, this.config?.requeue)
         await this.messagingPublisher.sendMessage({
           exchange: 'error.messages',
           message: {

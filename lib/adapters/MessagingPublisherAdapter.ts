@@ -8,7 +8,7 @@ export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
     this.logger = logger
   }
 
-  async sendMessage({ exchange, message }: { exchange: string; message: any }) {
+  async sendMessage({ exchange, queue, message }: { exchange?: string; queue?: string; message: any }) {
     message = { ...message, messageOrigin: process.env.SERVICE_NAME }
     const connection = await connect({
       heartbeat: 5,
@@ -18,11 +18,14 @@ export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
     })
     const channel = await connection.createChannel()
 
-    await channel.assertExchange(exchange, "fanout")
-
-    this.logger.info(`+ New message on exchange "${exchange}"`)
-
-    channel.publish(exchange, "", Buffer.from(JSON.stringify(message)))
+    if (exchange) {
+      await channel.assertExchange(exchange, "fanout")
+      this.logger.info(`+ New message on exchange "${exchange}"`)
+      channel.publish(exchange, "", Buffer.from(JSON.stringify(message)))
+    } else if (queue) {
+      this.logger.info(`+ New message on queue "${exchange}"`)
+      channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)))
+    }
 
     await channel.close()
     await connection.close()
