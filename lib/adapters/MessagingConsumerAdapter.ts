@@ -48,6 +48,12 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
 
         await this.useCase.execute(jsonQueueMessage)
         channel.ack(message as ConsumeMessage)
+        if (jsonQueueMessage?.requeueUid) {
+          await this.messagingPublisher.sendMessage({
+            exchange: 'success.messages',
+            message: { requeueUid: jsonQueueMessage?.requeueUid, }
+          })
+        }
         this.logger.info(`${successMessage}`, queueMessage)
       } catch (error: any) {
         channel.nack(message as ConsumeMessage, undefined, false)
