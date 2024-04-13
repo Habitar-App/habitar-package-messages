@@ -4,12 +4,13 @@ import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
 
 export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
   private logger: Logger
+  private defaultConfig = { autoSetOrigin: true }
   constructor({ logger }: { logger: Logger }) {
     this.logger = logger
   }
 
-  async sendMessage({ exchange, queue, message }: { exchange?: string; queue?: string; message: any }) {
-    message = { ...message, messageOrigin: process.env.SERVICE_NAME }
+  async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string; queue?: string; message: any, config?: { autoSetOrigin?: boolean } }) {
+    if (config.autoSetOrigin) message.messageOrigin = process.env.SERVICE_NAME
     const connection = await connect({
       heartbeat: 5,
       hostname: process.env.AMQP_CONNECTION,

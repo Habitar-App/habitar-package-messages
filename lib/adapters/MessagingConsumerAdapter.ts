@@ -45,38 +45,57 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
       if (!queueMessage) return
 
       const jsonQueueMessage: any = JSON.parse(queueMessage)
-      try {
-        if (jsonQueueMessage.messageOrigin === process.env.SERVICE_NAME)
-          return channel.ack(message as ConsumeMessage)
 
-        await this.useCase.execute(jsonQueueMessage)
-        channel.ack(message as ConsumeMessage)
-        if (jsonQueueMessage?.requeueUid) {
-          await this.messagingPublisher.sendMessage({
-            exchange: 'success.messages',
-            message: { requeueUid: jsonQueueMessage?.requeueUid, }
-          })
-        }
-        this.logger.info(`${successMessage}`, queueMessage)
-      } catch (error: any) {
-        channel.nack(message as ConsumeMessage, undefined, this.config?.requeue)
+      if (Array.isArray(jsonQueueMessage)) {
+        await this.consumeArray(channel, jsonQueueMessage, message, queueName, successMessage)
+      } else {
+        await this.consumeObject(channel, jsonQueueMessage, message, queueName, successMessage)
+      }
+    })
+  }
+
+  private async consumeArray(channel: Channel, jsonArray: any[], message: ConsumeMessage | null, queueName: string, successMessage: string) {
+    for (const item of jsonArray) {
+      await this.consumeObject(channel, item, message, queueName, successMessage)
+    }
+  }
+
+  private async consumeObject(channel: Channel, jsonObject: any, message: ConsumeMessage | null, queueName: string, successMessage: string) {
+    try {
+      if (jsonObject.messageOrigin === process.env.SERVICE_NAME)
+        return channel.ack(message as ConsumeMessage)
+
+      await this.useCase.execute(jsonObject)
+
+      channel.ack(message as ConsumeMessage)
+
+      if (jsonObject?.requeueUid)
+        await this.messagingPublisher.sendMessage({
+          exchange: 'success.messages',
+          message: { requeueUid: jsonObject?.requeueUid, }
+        })
+
+      this.logger.info(`${successMessage}`, JSON.stringify(jsonObject))
+    } catch (error: any) {
+      channel.nack(message as ConsumeMessage, undefined, this.config?.requeue)
+
         await this.messagingPublisher.sendMessage({
           exchange: 'error.messages',
           message: {
-            requeueUid: jsonQueueMessage?.requeueUid,
+            requeueUid: jsonObject?.requeueUid,
             origin: process.env.SERVICE_NAME,
             queue: queueName,
-            data: jsonQueueMessage,
+            data: jsonObject,
             error: { message: error.message, stack: error.stack }
           }
         })
+
         this.logger.error(`Fail when consuming message from rabbitmq queue.`, {
-          exchange: exchange,
-          message: queueMessage,
+          exchange: this.options.exchange,
+          message: JSON.stringify(jsonObject),
           queue: queueName,
           error: JSON.stringify(error?.message),
         })
-      }
-    })
+    }
   }
 }
