@@ -65,7 +65,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
       const jsonQueueMessage: any = JSON.parse(queueMessage);
 
       if (Array.isArray(jsonQueueMessage)) {
-        await this.consumeArray(channel, queueName, jsonQueueMessage);
+        await this.consumeArray(channel, queueName, jsonQueueMessage, message);
       } else {
         await this.consumeObject(
           channel,
@@ -81,11 +81,13 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
   private async consumeArray(
     channel: Channel,
     queueName: string,
-    queueMessage: any
+    queueMessage: any,
+    message: ConsumeMessage | null
   ) {
     for (const item of queueMessage) {
-      channel.sendToQueue(queueName, Buffer.from(JSON.stringify(item)));
+      await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(item)));
     }
+    channel.ack(message as ConsumeMessage)
   }
 
   private async consumeObject(

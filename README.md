@@ -1,4 +1,4 @@
-# @butfly/params
+# @butfly/messages
 
 To install dependencies:
 
