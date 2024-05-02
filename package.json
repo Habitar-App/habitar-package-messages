@@ -19,6 +19,7 @@
     "@types/winston": "^2.4.4",
     "amqplib": "^0.10.3",
     "typescript": "^5.0.0",
+    "uuid": "^9.0.1",
     "winston": "^3.11.0"
   }
 }
