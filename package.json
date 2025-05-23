@@ -1,25 +1,33 @@
 {
-  "name": "@butfly/messages",
-  "version": "1.1.8",
-  "main": "lib/index.ts",
+  "name": "@habitar/package-messages",
+  "version": "0.0.1",
+  "description": "Messages package for Habitar",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "files": [
-    "lib"
+    "dist"
   ],
   "scripts": {
-    "build": "npx tsc"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "habitar",
+    "messages"
+  ],
+  "author": "Habitar",
+  "license": "MIT",
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "@types/node": "^20.11.24",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@types/amqplib": "^0.10.5",
-    "@types/winston": "^2.4.4",
-    "amqplib": "^0.10.3",
-    "typescript": "^5.0.0",
-    "uuid": "^9.0.1",
-    "winston": "^3.11.0"
+    "uuid": "^11.1.0"
   }
 }
