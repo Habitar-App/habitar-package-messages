@@ -1,33 +1,36 @@
 {
-  "name": "@habitar/package-messages",
-  "version": "0.0.1",
-  "description": "Messages package for Habitar",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "lint": "eslint src --ext .ts,.tsx",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "npm run build"
+  "name": "@habitar/messages",
+  "version": "1.0.0",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Habitar-App/habitar-package-messages.git"
   },
-  "keywords": [
-    "habitar",
-    "messages"
-  ],
-  "author": "Habitar",
-  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "devDependencies": {
-    "@types/node": "^20.11.24",
-    "eslint": "^8.57.0",
-    "tsup": "^8.0.2",
-    "typescript": "^5.3.3"
+    "bun-types": "^1.2.14",
+    "bunchee": "^5.6.2"
   },
-  "dependencies": {
-    "uuid": "^11.1.0"
-  }
+  "exports": {
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "require": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/Habitar-App/habitar-package-messages/issues"
+  },
+  "description": "",
+  "homepage": "https://github.com/Habitar-App/habitar-package-messages#readme",
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {
+    "build": "bunchee"
+  },
+  "types": "./dist/index.d.ts"
 }
