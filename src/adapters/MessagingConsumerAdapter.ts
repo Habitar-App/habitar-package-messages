@@ -3,11 +3,12 @@ import { Logger } from "winston";
 import { IMessagingConsumerAdapter } from "../contracts/IMessagingConsumer";
 import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
 import { v4 } from "uuid";
+import { ErrorHandler } from "./ErrorHandler";
+
 type RabbitConsumerAdapterOptions = {
   exchange: string;
   queue: string;
   successMessage: string;
-  errorHandler: (error: any) => any;
 };
 
 export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
@@ -19,8 +20,11 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     exchange: string;
     queues: string[];
   }) => Promise<{ channel: Channel; connection: Connection }>;
-  private config?: Partial<{ requeue: boolean }>;
-  private errorHandler: (error: any) => any;
+  private config: {
+    requeue: boolean;
+  };
+  private errorHandler: ErrorHandler;
+
   constructor(
     {
       useCase,
@@ -28,7 +32,6 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
       logger,
       amqpConnection,
       config = {},
-      errorHandler,
     }: {
       useCase: { execute: (data: any) => Promise<any> | any };
       messagingPublisher: IMessagingPublisherAdapter;
@@ -37,8 +40,9 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
         exchange: string;
         queues: string[];
       }) => Promise<{ channel: Channel; connection: Connection }>;
-      config?: Partial<{ requeue: boolean }>;
-      errorHandler: (error: any) => any;
+      config?: Partial<{
+        requeue: boolean;
+      }>;
     },
     options: RabbitConsumerAdapterOptions
   ) {
@@ -47,8 +51,10 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     this.messagingPublisher = messagingPublisher;
     this.logger = logger;
     this.amqpConnection = amqpConnection;
-    this.config = { ...config, requeue: config?.requeue || false };
-    this.errorHandler = errorHandler;
+    this.config = {
+      requeue: config?.requeue || false,
+    };
+    this.errorHandler = new ErrorHandler(logger);
     this.consume();
   }
 
@@ -116,9 +122,13 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
 
       this.logger.info(`${successMessage}`, JSON.stringify(jsonObject));
     } catch (error: any) {
-      channel.nack(message as ConsumeMessage, undefined, this.config?.requeue);
+      channel.nack(message as ConsumeMessage, undefined, this.config.requeue);
 
-      const handledError = this.errorHandler(error);
+      const handledError = this.errorHandler.handleError(error, {
+        exchange: this.options.exchange,
+        message: jsonObject,
+        queue: queueName,
+      });
 
       await this.messagingPublisher.sendMessage({
         exchange: "error.messages",
