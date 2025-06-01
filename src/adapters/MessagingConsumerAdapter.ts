@@ -7,6 +7,7 @@ type RabbitConsumerAdapterOptions = {
   exchange: string;
   queue: string;
   successMessage: string;
+  errorHandler: (error: any) => any;
 };
 
 export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
@@ -19,7 +20,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     queues: string[];
   }) => Promise<{ channel: Channel; connection: Connection }>;
   private config?: Partial<{ requeue: boolean }>;
-
+  private errorHandler: (error: any) => any;
   constructor(
     {
       useCase,
@@ -27,6 +28,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
       logger,
       amqpConnection,
       config = {},
+      errorHandler,
     }: {
       useCase: { execute: (data: any) => Promise<any> | any };
       messagingPublisher: IMessagingPublisherAdapter;
@@ -36,6 +38,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
         queues: string[];
       }) => Promise<{ channel: Channel; connection: Connection }>;
       config?: Partial<{ requeue: boolean }>;
+      errorHandler: (error: any) => any;
     },
     options: RabbitConsumerAdapterOptions
   ) {
@@ -45,7 +48,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     this.logger = logger;
     this.amqpConnection = amqpConnection;
     this.config = { ...config, requeue: config?.requeue || false };
-
+    this.errorHandler = errorHandler;
     this.consume();
   }
 
@@ -115,6 +118,8 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     } catch (error: any) {
       channel.nack(message as ConsumeMessage, undefined, this.config?.requeue);
 
+      const handledError = this.errorHandler(error);
+
       await this.messagingPublisher.sendMessage({
         exchange: "error.messages",
         message: {
@@ -122,15 +127,13 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
           origin: process.env.SERVICE_NAME,
           queue: queueName,
           data: jsonObject,
-          error: { message: error.message, stack: error.stack },
+          error: {
+            message: handledError.message,
+            errors: handledError.errors,
+            statusCode: handledError.statusCode,
+            stack: handledError.stack,
+          },
         },
-      });
-
-      this.logger.error(`Fail when consuming message from rabbitmq queue.`, {
-        exchange: this.options.exchange,
-        message: JSON.stringify(jsonObject),
-        queue: queueName,
-        error: JSON.stringify(error?.message),
       });
     }
   }
