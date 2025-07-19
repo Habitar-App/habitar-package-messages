@@ -10,7 +10,7 @@ export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
     this.logger = logger
   }
 
-  async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string; queue?: string; message: any, config?: { autoSetOrigin?: boolean } }) {
+  async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string, queue?: string, message: any, config?: { autoSetOrigin?: boolean } }) {
     if (config.autoSetOrigin) message.messageOrigin = process.env.SERVICE_NAME
     if(!message.habitarProcessUid) message.habitarProcessUid = uuidv4()
     const connection = await connect({
