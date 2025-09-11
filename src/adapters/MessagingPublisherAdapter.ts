@@ -1,12 +1,12 @@
 import { connect } from "amqplib";
-import { Logger } from "winston";
+import pino from "pino";
 import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
 import { v4 as uuidv4 } from 'uuid';
 
 export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
-  private logger: Logger
+  private logger: pino.Logger<never, boolean>
   private defaultConfig = { autoSetOrigin: true }
-  constructor({ logger }: { logger: Logger }) {
+  constructor({ logger }: { logger: pino.Logger<never, boolean> }) {
     this.logger = logger
   }
 
