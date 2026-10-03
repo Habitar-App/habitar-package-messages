@@ -1,3 +1,5 @@
+> ⚠️ **ARQUIVADO.** Este serviço foi absorvido por `@argentotech/messages`. Veja `ARQUIVADO.md`.
+
 # @habitar/messages
 
 To install dependencies:
